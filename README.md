@@ -6,3 +6,4 @@
 
 ### hw1
 
+bisection method, Newton's method and the secant method. (9.25 finished)

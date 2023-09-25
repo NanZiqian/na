@@ -23,11 +23,13 @@ void a_b_c1(){
     function f;
     Newton newton_solver;
     //(a)
+    cout << "(a):" << endl;
     OutputOfNewton* output_a = newton_solver.solve(f,33.0/180*Pi,1e+4,1e-12);
     output_a->print_output();
     delete output_a;
 
     //(b)
+    cout << endl << "(b):" << endl;
     D=30;
     C = (h+0.5*D)*sin(beta1)-0.5*D*tan(beta1);
     E = (h+0.5*D)*cos(beta1)-0.5*D;
@@ -35,6 +37,7 @@ void a_b_c1(){
     output_b->print_output();
 
     //(c)
+    cout << endl << "(c):" << endl;
     Secant secant_solver;
     OutputOfSecant* output_c = secant_solver.solve(f,33.0/180*Pi,50.0/180*Pi,1e+3,1e-12,1e-12);
     output_c->print_output();
@@ -51,7 +54,7 @@ void c2(){
 }
 
 int main(){
-    //a_b_c1();
+    a_b_c1();
     c2();
     return 0;
 }

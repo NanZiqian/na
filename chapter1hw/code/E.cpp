@@ -30,8 +30,8 @@ int main(){
     cout << "secant method:" << endl;
     output_secant_f->print_output();
 
-    cout << "f(c-0.01) = " << f.getvalue(0.166166-0.01) << endl;
-    cout << "f(c+0.01) = " << f.getvalue(0.166166+0.01) << endl;
+    cout << "f(c-0.005) = " << f.getvalue(0.166166-0.005) << endl;
+    cout << "f(c+0.005) = " << f.getvalue(0.166166+0.005) << endl;
 
     return 0;
 
