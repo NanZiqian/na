@@ -1,6 +1,5 @@
 #include"EquationSolver.h"
-#define Pi 3.1415926
-#define LN 2.71828182846
+
 using namespace std;
 
 /// @brief x \in [0,pi/2]
@@ -61,17 +60,18 @@ int main(){
     function3 f3;
     function4 f4;
     Bisection bisection_solver;
-    OutputOfSolve output_f1=bisection_solver.solve(f1,0.001,Pi/2-0.001,1e+4,1e-12,1e-12);
-    OutputOfSolve output_f2=bisection_solver.solve(f2,0.001,1,1e+4,1e-12,1e-12);
-    OutputOfSolve output_f3=bisection_solver.solve(f3,1,3,1e+4,1e-12,1e-12);
-    OutputOfSolve output_f4=bisection_solver.solve(f4,0.12,4,1e+4,1e-12,1e-12);
+    OutputOfBisection* output_f1=bisection_solver.solve(f1,0.001,Pi/2-0.001,1e+4,1e-12,1e-12);
+    OutputOfBisection* output_f2=bisection_solver.solve(f2,0.001,1,1e+4,1e-12,1e-12);
+    OutputOfBisection* output_f3=bisection_solver.solve(f3,1,3,1e+4,1e-12,1e-12);
+    OutputOfBisection* output_f4=bisection_solver.solve(f4,0.12,4,1e+4,1e-12,1e-12);
     cout << "f1:" << endl;
-    output_f1.print_output();
+    output_f1->print_output();
     cout << "f2:" << endl;
-    output_f2.print_output();
+    output_f2->print_output();
     cout << "f3:" << endl;
-    output_f3.print_output();
+    output_f3->print_output();
     cout << "f4:" << endl;
-    output_f4.print_output();
+    output_f4->print_output();
+
     return 0;
 }
