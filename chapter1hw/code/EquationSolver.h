@@ -64,7 +64,7 @@ public:
         }
     }
 
-    OutputOfBisection* solve(){}
+    OutputOfBisection* solve(){return nullptr;}
     /// @brief bisection method to solve nonlinear equation f(x)=0
     /// @param f element of class Function with method getvalue().C[a,b]
     /// @param a 
@@ -142,7 +142,7 @@ public:
             m_Newton = nullptr;
         }
     }
-    OutputOfNewton* solve(){}
+    OutputOfNewton* solve(){return nullptr;}
     OutputOfNewton* solve(Function& f,double x0,int M,double epsilon){
         double x = x0;
         double u;
@@ -195,7 +195,7 @@ public:
             m_secant = nullptr;
         }
     }
-    OutputOfSecant* solve(){}
+    OutputOfSecant* solve(){return nullptr;}
     OutputOfSecant* solve(Function& f,double x0,double x1,int M,double delta,double epsilon){
         double xn = x1,xn_1=x0;
         double u=f.getvalue(xn),v=f.getvalue(xn_1);
@@ -209,6 +209,7 @@ public:
             if(abs(xn - xn_1)<delta)
                 break;
             u = f.getvalue(xn);
+            //cout << "iteration " << k <<": f(xk)= "<<u<<endl;
             if (abs(u)<epsilon)
                 break;
         }

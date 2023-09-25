@@ -72,6 +72,9 @@ int main(){
     output_f3->print_output();
     cout << "f4:" << endl;
     output_f4->print_output();
+    delete output_f1;
+    delete output_f2;
+    delete output_f3;
 
     return 0;
 }
