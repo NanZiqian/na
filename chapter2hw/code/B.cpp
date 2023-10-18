@@ -15,6 +15,13 @@ int main(){
     function1 *f = new function1() ;
     NewtonInterpolation NI(f,vector_x);
 
+    // int n = 8;
+    // for(int i=0;i<=n;i++){
+    //     vector_x.push_back(-5+10.0/n*i);
+    //     NI.change_FunctionAndPoints(f,vector_x,0);
+    // }
+    //double y = NI.estimate(-5);
+
     ofstream fout("B.txt",ios::out);
 
     for(int n = 2;n<=8;n+=2){

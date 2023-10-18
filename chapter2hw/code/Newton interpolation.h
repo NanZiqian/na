@@ -26,9 +26,11 @@ class NewtonInterpolation{
     double estimate(double x){
         int n = m_interpolating_points.size()-1;
         double result = m_parameters[n];
+        //cout << result << endl;
         for(int i=n-1;i>=0;i--){
             result *= (x-m_interpolating_points[i]);
             result += m_parameters[i];
+            //cout << result << endl;
         }
         return result;
     }
