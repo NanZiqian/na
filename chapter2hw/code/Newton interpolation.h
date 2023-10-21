@@ -11,12 +11,14 @@ class NewtonInterpolation{
         Calc_divided_difference();
     }
     ~NewtonInterpolation(){
-        delete m_F;
+        if(m_F!=nullptr)
+            delete m_F;
     }
 
     void change_FunctionAndPoints(Function *F,vector<double> &vector_x,int funtion_changed=1){
         if(funtion_changed){
-            delete m_F;
+            if(m_F!=nullptr)
+                delete m_F;
             m_F = F;
         }
         m_interpolating_points = vector_x;
