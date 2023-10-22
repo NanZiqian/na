@@ -93,6 +93,9 @@ class HermiteInterpolation{
             //m_interpolating_points[i-1].first is n_i-1
             prefix.push_back(prefix[i-1]+m_interpolating_points[i-1].first+1);
         }
+        // for(int i=0;i<prefix.size();i++){
+        //     cout << "prefix["<<i<<"]: "<<prefix[i]<<endl;
+        // }
 
         m_parameters.clear();
         //n+1 is the size of parameters
@@ -102,12 +105,14 @@ class HermiteInterpolation{
         for(int i=0;i<=n;i++){
             for(int ii=n;ii>=i;ii--){
                 int j = find(ii);
-                if(i <= m_interpolating_points[j].first && (ii >= prefix[j] && ii <= prefix[j] + m_interpolating_points[j].first)){
+                if(i <= m_interpolating_points[j].first && (ii >= prefix[j] + i && ii <= prefix[j] + m_interpolating_points[j].first)){
                     m_parameters[ii] = m_F->evaluate(i,m_interpolating_points[j].second)/factorial(i);
                 }
                 else{
-                    m_parameters[ii] = (m_parameters[ii]-m_parameters[ii-1])/(m_interpolating_points[j].second-m_interpolating_points[j].first);
+
+                    m_parameters[ii] = (m_parameters[ii]-m_parameters[ii-1])/(m_interpolating_points[j].second-m_interpolating_points[find(ii-i)].second);
                 }
+                //cout << "f[x0,...,x"<<ii<<"]: "<<m_parameters[ii]<<endl;
             }
         }
     }
