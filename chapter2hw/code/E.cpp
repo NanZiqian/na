@@ -53,7 +53,7 @@ int main(){
     // seven points interpolation
     NewtonInterpolation NI(nullptr,vector_x);
     
-    ofstream fout("E.txt",ios::out);
+    ofstream fout("output/E.txt",ios::out);
     vector_x = {0,6,10,13,17,20,28};
     for(int i=0;i<2;i++){
         NI.change_FunctionAndPoints(f[i],vector_x,1);

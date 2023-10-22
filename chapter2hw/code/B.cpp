@@ -22,7 +22,7 @@ int main(){
     // }
     //double y = NI.estimate(-5);
 
-    ofstream fout("B.txt",ios::out);
+    ofstream fout("output/B.txt",ios::out);
 
     for(int n = 2;n<=8;n+=2){
         vector_x.clear();

@@ -15,7 +15,7 @@ int main(){
     function1 *f = new function1() ;
     NewtonInterpolation NI(f,vector_x);
 
-    ofstream fout("C.txt",ios::out);
+    ofstream fout("output/C.txt",ios::out);
     for(int n = 5;n<=20;n+=5){
         vector_x.clear();
         vector_x = Chebyshev_Zeros(n);
