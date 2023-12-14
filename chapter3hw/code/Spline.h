@@ -74,11 +74,11 @@ class D1S32Input_Condition: public Input_Condition{
         fin>>m1>>mN;
         fin.close();
 
-        cout << "number of points N = " << N << endl;
-        cout << "points:" << endl;
-        for(int i=0;i<N;i++){
-            cout << "x: " << points[0][i] << " y: " << points[1][i] << endl;
-        }
+        // cout << "number of points N = " << N << endl;
+        // cout << "points:" << endl;
+        // for(int i=0;i<N;i++){
+        //     cout << "x: " << points[0][i] << " y: " << points[1][i] << endl;
+        // }
     }
     ~D1S32Input_Condition(){}
 
@@ -110,6 +110,7 @@ public:
 
         Calc_divided_difference();
         Calc_coefficients();
+        //check_correctness();
     }
     ~D1S32Spline(){}
 
@@ -117,14 +118,32 @@ public:
     double operator()(double x) const{
         //x \in [ x[interval],x[interval+1] ]
         int interval = judge_interval(x);
+        double xi = input_condition.points[0][interval];
+        //cout << "for x = " << x << "select xi = " << xi << endl;
         double result = 0;
         for(int i=0;i<=3;i++){
-            result += coefficients[interval][i]*pow(x,i);
+            result += coefficients[interval][i]*pow(x-xi,i);
+            //cout << i << "th coefficient of interval " << interval << " is " << coefficients[interval][i] << endl;
         }
         return result;
     }
     double eval(double x) const{
         return (*this)(x);
+    }
+
+    void fout_coefficients(string filename="D1S32_coefficients_") const{
+        int N = input_condition.N;
+        filename += to_string(N);
+        filename += ".txt";
+        ofstream fout(filename);
+        for(int i=0;i<N-1;i++){
+            //ith interval
+            for(int j=0;j<=3;j++){
+                //x^j 's coefficient
+                fout  << coefficients[i][j] << " ";
+            }
+            fout << endl;
+        }
     }
 
 private:
@@ -183,14 +202,20 @@ private:
         // cout << A << endl;
         // cout << "b:" << endl;
         // cout << b << endl;
+        //cout << "M:" << endl;
+        //cout << M << endl;
 
         //coefficients[i][j] means the coefficient of x^j in the ith interval,k<=n-2
         for(int i=0;i<N-1;i++){
-            coefficients[i][0] = input_condition.points[1][i];
-            coefficients[i][1] = (input_condition.points[1][i+1]-input_condition.points[1][i])/(input_condition.points[0][i+1]-input_condition.points[0][i]);
-            coefficients[i][1] -= (M(i+1,0)-M(i,0))*(input_condition.points[0][i+1]-input_condition.points[0][i])/6;
+            double xi = input_condition.points[0][i];
+            double xi1 = input_condition.points[0][i+1];
+            double yi = input_condition.points[1][i];
+            double yi1 = input_condition.points[1][i+1];
+            coefficients[i][0] = yi;
+            coefficients[i][1] = (yi1-yi)/(xi1-xi);
+            coefficients[i][1] -= (M(i+1,0)+2*M(i,0))*(xi1-xi)/6;
             coefficients[i][2] = M(i,0)/2;
-            coefficients[i][3] = (M(i+1,0)-M(i,0))/(6*(input_condition.points[0][i+1]-input_condition.points[0][i]));
+            coefficients[i][3] = (M(i+1,0)-M(i,0))/(6*(xi1-xi));
         }
     }
 
@@ -202,6 +227,16 @@ private:
         }
         cout << "x is not in the interval" << endl;
         return -1;
+    }
+
+    void check_correctness(){
+        int N = input_condition.N;
+        for(int i=0;i<N-1;i++){
+            double x = input_condition.points[0][i];
+            double y = input_condition.points[1][i];
+            double result = (*this)(x);
+            cout << "x: " << x << " y: " << y << " result: " << result << endl;
+        }
     }
 
     D1S32Input_Condition input_condition;
