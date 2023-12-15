@@ -22,7 +22,19 @@ public:
 
     virtual void Calc_divided_difference() = 0;
     virtual void Calc_coefficients() = 0;
+};
 
+class B_Spline{
+    public:
+    B_Spline(){}
+    ~B_Spline(){}
+
+    virtual void resize_info() = 0;
+    
+    //evaluate s(x)
+    virtual double operator()(double x) const = 0;
+    virtual double eval(double x) const = 0;
+    virtual void Calc_coefficients() = 0;
 };
 
 class Input_Condition{
@@ -38,7 +50,7 @@ class Input_Condition{
 /***********************************************************************
  * concrete class
  **********************************************************************/
-
+//D1S32input is usable for D1S32Spline and D1B32Spline
 class D1S32Input_Condition: public Input_Condition{
     public:
     D1S32Input_Condition(){}
@@ -95,9 +107,6 @@ public:
     }
     ~D1S32Spline(){}
 
-
-
-
 /**core functions
  * 
  */
@@ -133,12 +142,7 @@ public:
         }
     }
 
-
-
-
 private:
-
-
 
 /**core functions
  * 
@@ -227,9 +231,6 @@ private:
         }
     }
 
-
-
-
     /**useful functions
      * 
      */
@@ -242,9 +243,6 @@ private:
         cout << "x is not in the interval" << endl;
         return -1;
     }
-
-
-
 
     /**debug
      * 
@@ -263,4 +261,203 @@ private:
     //spline function of degree n,need n+1 coefficients
     vector<vector<double> > coefficients;
     vector<double> divided_difference;
+};
+
+
+
+
+class B21Input_Condition: public Input_Condition{
+    public:
+    B21Input_Condition(){}
+    B21Input_Condition(string filename){
+        ifstream fin(filename);
+        fin>>N;
+
+        points.resize(N-1);
+
+        //f(ti), ti = 3/2 ~ N-1/2
+        for(int i=0;i<N-1;i++){
+            fin>>points[i];
+        }
+        //read additional condition
+        fin>>f1>>fN;
+        fin.close();
+
+        // cout << "number of points N = " << N << endl;
+        // cout << "points:" << endl;
+        // for(int i=0;i<N;i++){
+        //     cout << "x: " << points[0][i] << " y: " << points[1][i] << endl;
+        // }
+    }
+    ~B21Input_Condition(){}
+
+    // number of points
+    int N;
+    // x: points[0] f(x): points[1]
+    vector<double> points;
+    // additional condition
+    double f1,fN;
+};
+
+
+
+
+class D1B32Spline: public B_Spline{
+public:
+    D1B32Spline(){}
+
+    /// @brief absorb input condition from txt file
+    // resize coefficients and divided_difference
+    // calculate coefficients
+    /// @param filename 
+    D1B32Spline(string filename){
+        input_condition = D1S32Input_Condition(filename);
+        
+        resize_info();
+        Calc_coefficients();
+        check_correctness();
+    }
+    ~D1B32Spline(){}
+
+/**core functions
+ * 
+ */
+    //s(x) = \sum_{i=-1}^N a_i*Bi^3(x)
+    double operator()(double x) const{
+        //x \in [ j,j+1 ]
+        int j = judge_interval(x)+1;
+        double result = 0;
+        for(int i=0;i<=3;i++){
+            result += coefficients[j-1+i]*Bi3(j-1+i,x);
+            //cout << i << "th coefficient of interval " << interval << " is " << coefficients[interval][i] << endl;
+        }
+        return result;
+    }
+    double eval(double x) const{
+        return (*this)(x);
+    }
+
+    //fout estimations at x
+    //N
+    //x1 y1
+    //x2 y2 ...
+    void fout_eval(vector<double> x,string filename="D1B32_evals_") const{
+        int N = input_condition.N;
+        filename += to_string(N);
+        filename += ".txt";
+        ofstream fout(filename);
+        fout << N << endl;
+        for(int i=0;i<x.size();i++){
+            fout << x[i] << " " << (*this)(x[i]) << endl;
+        }
+    }
+
+private:
+
+/**core functions
+ * 
+ */
+    void resize_info(){
+        //B32 with N points has N+2 coefficients
+        //coefficients[i] means a_{i-1}
+        coefficients.resize(input_condition.N+2);
+    }
+
+    //s(x) = \sum_{i=-1}^N a_i*Bi^3(x)
+    //coefficients stores a_i
+    void Calc_coefficients(){
+        int N = input_condition.N;
+        Eigen::Matrix<double, Eigen::Dynamic,Eigen::Dynamic> A;
+        A.setZero(N,N);
+
+        A(0,0) = 2;
+        A(0,1) = 1;
+        A(N-1,N-2) = 1;
+        A(N-1,N-1) = 2;
+        for(int i=1;i<N-1;i++){
+            A(i,i) = 4;
+            A(i,i-1) = 1;
+            A(i,i+1) = 1;
+        }
+        
+        Eigen::Matrix<double, Eigen::Dynamic,1> b;
+        b.resize(N,1);
+        for(int i=1;i<N-1;i++){
+            b(i,0) = 6*input_condition.points[1][i];
+        }
+        b(0,0) = 3*input_condition.points[1][0]+input_condition.m1;
+        b(N-1,0) = 3*input_condition.points[1][N-1]+input_condition.mN;
+        Eigen::Matrix<double, Eigen::Dynamic,1> a;
+        a.resize(N,1);
+        a = A.colPivHouseholderQr().solve(b);
+        for(int i=0;i<N;i++){
+            coefficients[i+1] = a(i,0);
+        }
+        coefficients[0] = coefficients[2] - 2*input_condition.m1;
+        coefficients[N+1] = coefficients[N-1] + 2*input_condition.mN;
+        // cout << "A:" << endl;
+        // cout << A << endl;
+        // cout << "b:" << endl;
+        // cout << b << endl;
+        //cout << "a:" << endl;
+        //cout << a << endl;
+    }
+
+    //support interval is [i-1,i+n] namely [i-1,i+3]
+    double Bi3(int i,double x) const{
+        
+        double result = 0;
+        for(int k=-1;k<=3;k++){
+            result += pow(-1,3-k)*C(4,k+1)*pow(RELU(k+i-x),3);
+        }
+        result/=6;
+        return result;
+    }
+
+    /**debug
+     * 
+     */
+    void check_correctness(){
+        int N = input_condition.N;
+        for(int i=0;i<N-1;i++){
+            double x = input_condition.points[0][i];
+            double y = input_condition.points[1][i];
+            double result = (*this)(x);
+            cout << "x: " << x << " y: " << y << " result: " << result << endl;
+        }
+    }
+
+/**useful functions
+ * 
+ */
+    //x \in [ ti[interval],ti[interval+1] ] namely [i+1,i+2] not [i,i+1]!!!
+    int judge_interval(double x) const{
+        int N = input_condition.N;
+        for(int i=0;i<N-1;i++){
+            if(x>=input_condition.points[0][i]&&x<=input_condition.points[0][i+1])
+                return i;
+        }
+        cout << "x is not in the interval" << endl;
+        return -1;
+    }
+
+    //combinatorial number
+    int C(int n,int m) const{
+        int ans = 1;
+        for(int i =1;i<=m;i++){
+            ans = ans * (n-m+i)/i;
+        }
+        return ans;
+    }
+
+    double RELU(double x) const{
+        if(x <= 0 )
+            return 0;
+        else
+            return x;
+    }
+
+    D1S32Input_Condition input_condition;
+    vector<double> coefficients;
+
 };
