@@ -10,15 +10,18 @@ using namespace std;
 /***********************************************************************
  * abstract class
  **********************************************************************/
-class Spline {
+class Piecewise_Spline {
 public:
-    Spline(){}
-    ~Spline(){};
+    Piecewise_Spline(){}
+    ~Piecewise_Spline(){};
     
+    virtual void resize_info() = 0;
     //evaluate s(x)
     virtual double operator()(double x) const = 0;
-
     virtual double eval(double x) const = 0;
+
+    virtual void Calc_divided_difference() = 0;
+    virtual void Calc_coefficients() = 0;
 
 };
 
@@ -30,30 +33,11 @@ class Input_Condition{
     ~Input_Condition(){};
 };
 
+
+
 /***********************************************************************
  * concrete class
  **********************************************************************/
-
-//template <int n>
-//spline function of degree n,need n+1 coefficients
-// class Coefficients{
-//     public:
-//     Coefficients(){
-//         coefficients.resize(n+1);
-//     }
-//     //N is the number of points, N-1 is the number of intervals
-//     Coefficients(int N){
-//         //coefficients[i][j] means the coefficient of x^i in the jth interval
-//         coefficients.resize(n+1);
-//         for(int i=0;i<n+1;i++)
-//             coefficients[i].resize(N-1);
-//     }
-//     ~Coefficients();
-//     double operator[](int i) const{
-//         return coefficients[i];
-//     }
-//     vector<vector<double> > coefficients; 
-// };
 
 class D1S32Input_Condition: public Input_Condition{
     public:
@@ -93,27 +77,30 @@ class D1S32Input_Condition: public Input_Condition{
 
 
 
-class D1S32Spline: public Spline{
+class D1S32Spline: public Piecewise_Spline{
 public:
     D1S32Spline(){}
+
+    /// @brief absorb input condition from txt file
+    // resize coefficients and divided_difference
+    // calculate coefficients
+    /// @param filename 
     D1S32Spline(string filename){
         input_condition = D1S32Input_Condition(filename);
-        int n = 3,N = input_condition.N;
-
-        divided_difference.resize(N+1);
-
-        //nth order, n+1 coefficients for each polynomial,N-1 intervals
-        //coefficients[i][j] means the coefficient of x^j in the ith interval,k<=n-2
-        coefficients.resize(N-1);
-        for(int i=0;i<N-1;i++)
-            coefficients[i].resize(n+1);
-
+        
+        resize_info();
         Calc_divided_difference();
         Calc_coefficients();
         //check_correctness();
     }
     ~D1S32Spline(){}
 
+
+
+
+/**core functions
+ * 
+ */
     //evaluate s(x)
     double operator()(double x) const{
         //x \in [ x[interval],x[interval+1] ]
@@ -146,7 +133,28 @@ public:
         }
     }
 
+
+
+
 private:
+
+
+
+/**core functions
+ * 
+ */
+    void resize_info(){
+        int n = 3,N = input_condition.N;
+
+        divided_difference.resize(N+1);
+
+        //nth order, n+1 coefficients for each polynomial,N-1 intervals
+        //coefficients[i][j] means the coefficient of x^j in the ith interval,k<=n-2
+        coefficients.resize(N-1);
+        for(int i=0;i<N-1;i++)
+            coefficients[i].resize(n+1);
+    }
+
     void Calc_divided_difference(){
         int N = input_condition.N;
         divided_difference[0] = input_condition.m1;
@@ -219,6 +227,12 @@ private:
         }
     }
 
+
+
+
+    /**useful functions
+     * 
+     */
     int judge_interval(double x) const{
         int N = input_condition.N;
         for(int i=0;i<N-1;i++){
@@ -229,6 +243,12 @@ private:
         return -1;
     }
 
+
+
+
+    /**debug
+     * 
+     */
     void check_correctness(){
         int N = input_condition.N;
         for(int i=0;i<N-1;i++){
@@ -243,18 +263,4 @@ private:
     //spline function of degree n,need n+1 coefficients
     vector<vector<double> > coefficients;
     vector<double> divided_difference;
-};
-
-
-
-
-
-class D2S32Input_Condition: public Input_Condition{
-    public:
-    D2S32Input_Condition(){}
-    ~D2S32Input_Condition(){}
-};
-
-class D2S32Spline: public Spline{
-    public:
 };
