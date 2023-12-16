@@ -159,6 +159,21 @@ public:
         }
     }
 
+    //fout estimations at x
+    //n for x = linspace(1,N,n)
+    //x1 y1
+    //x2 y2 ...
+    void fout_eval(vector<double> x,string filename="D1S32_evals_") const{
+        int N = input_condition.N;
+        filename += to_string(N);
+        filename += ".txt";
+        ofstream fout(filename);
+        fout << x.size() << endl;
+        for(int i=0;i<x.size();i++){
+            fout << x[i] << " " << (*this)(x[i]) << endl;
+        }
+    }
+
 private:
 
 /**core functions
@@ -534,8 +549,8 @@ private:
 
         A(0,0) = 5;
         A(0,1) = 1;
-        A(N-1,N-2) = 1;
-        A(N-1,N-1) = 5;
+        A(N-2,N-3) = 1;
+        A(N-2,N-2) = 5;
         for(int i=1;i<N-2;i++){
             A(i,i) = 6;
             A(i,i-1) = 1;

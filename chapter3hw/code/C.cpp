@@ -7,8 +7,8 @@ int main(){
     D1B32Spline B32("C_B32.txt");
 
     vector<double> x;
-    x.resize(100);
-    int n = 100;
+    int n = 101;
+    x.resize(n);
     //x = linspace(1,11,n)
     for(int i=0;i<n;i++){
         x[i] = 1+i*10.0/(n-1);
