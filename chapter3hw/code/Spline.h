@@ -8,6 +8,25 @@
 using namespace std;
 
 /***********************************************************************
+ * useful functions
+ **********************************************************************/
+    //combinatorial number
+    int C(int n,int m){
+        int ans = 1;
+        for(int i =1;i<=m;i++){
+            ans = ans * (n-m+i)/i;
+        }
+        return ans;
+    }
+
+    double RELU(double x){
+        if(x <= 0 )
+            return 0;
+        else
+            return x;
+    }
+
+/***********************************************************************
  * abstract class
  **********************************************************************/
 class Piecewise_Spline {
@@ -50,6 +69,9 @@ class Input_Condition{
 /***********************************************************************
  * concrete class
  **********************************************************************/
+
+//Piecewise Spline
+
 //D1S32input is usable for D1S32Spline and D1B32Spline
 class D1S32Input_Condition: public Input_Condition{
     public:
@@ -70,11 +92,6 @@ class D1S32Input_Condition: public Input_Condition{
         fin>>m1>>mN;
         fin.close();
 
-        // cout << "number of points N = " << N << endl;
-        // cout << "points:" << endl;
-        // for(int i=0;i<N;i++){
-        //     cout << "x: " << points[0][i] << " y: " << points[1][i] << endl;
-        // }
     }
     ~D1S32Input_Condition(){}
 
@@ -264,6 +281,7 @@ private:
 };
 
 
+//B spline
 
 
 class B21Input_Condition: public Input_Condition{
@@ -272,29 +290,25 @@ class B21Input_Condition: public Input_Condition{
     B21Input_Condition(string filename){
         ifstream fin(filename);
         fin>>N;
+        points.resize(2);
+        //ti = i+1/2 ,i = 1,...,N-1
+        points[0].resize(N-1);
+        points[1].resize(N-1);
 
-        points.resize(N-1);
-
-        //f(ti), ti = 3/2 ~ N-1/2
+        //read data from txt file
         for(int i=0;i<N-1;i++){
-            fin>>points[i];
+            fin>>points[0][i]>>points[1][i];
         }
         //read additional condition
         fin>>f1>>fN;
         fin.close();
-
-        // cout << "number of points N = " << N << endl;
-        // cout << "points:" << endl;
-        // for(int i=0;i<N;i++){
-        //     cout << "x: " << points[0][i] << " y: " << points[1][i] << endl;
-        // }
     }
     ~B21Input_Condition(){}
 
     // number of points
     int N;
     // x: points[0] f(x): points[1]
-    vector<double> points;
+    vector< vector<double> > points;
     // additional condition
     double f1,fN;
 };
@@ -442,23 +456,161 @@ private:
         return -1;
     }
 
-    //combinatorial number
-    int C(int n,int m) const{
-        int ans = 1;
-        for(int i =1;i<=m;i++){
-            ans = ans * (n-m+i)/i;
-        }
-        return ans;
-    }
-
-    double RELU(double x) const{
-        if(x <= 0 )
-            return 0;
-        else
-            return x;
-    }
-
     D1S32Input_Condition input_condition;
     vector<double> coefficients;
 
+};
+
+
+
+
+class B21Spline: public B_Spline{
+public:
+    B21Spline(){}
+
+    /// @brief absorb input condition from txt file
+    // resize coefficients and divided_difference
+    // calculate coefficients
+    /// @param filename 
+    B21Spline(string filename){
+        input_condition = B21Input_Condition(filename);
+        
+        resize_info();
+        Calc_coefficients();
+        //check_correctness();
+    }
+    ~B21Spline(){}
+
+/**core functions
+ * 
+ */
+    //s(x) = \sum_{i=0}^N a_i*Bi^2(x)
+    double operator()(double x) const{
+        //x \in [ j,j+1 ]
+        int j = judge_interval(x);
+        double result = 0;
+        for(int i=0;i<=2;i++){
+            result += coefficients[j-1+i]*Bi2(j-1+i,x);
+            //cout << i << "th coefficient of interval " << interval << " is " << coefficients[interval][i] << endl;
+        }
+        return result;
+    }
+    double eval(double x) const{
+        return (*this)(x);
+    }
+
+    //fout estimations at x
+    //n for x = linspace(1,N,n)
+    //x1 y1
+    //x2 y2 ...
+    void fout_eval(vector<double> x,string filename="B21_evals_") const{
+        int N = input_condition.N;
+        filename += to_string(N);
+        filename += ".txt";
+        ofstream fout(filename);
+        fout << x.size() << endl;
+        for(int i=0;i<x.size();i++){
+            fout << x[i] << " " << (*this)(x[i]) << endl;
+        }
+    }
+
+private:
+
+/**core functions
+ * 
+ */
+    void resize_info(){
+        //B21 with N points has N+1 coefficients
+        //coefficients[i] means a_{i}
+        coefficients.resize(input_condition.N+1);
+    }
+
+    //s(x) = \sum_{i=0}^N a_i*Bi^2(x)
+    //coefficients stores a_i
+    void Calc_coefficients(){
+        int N = input_condition.N;
+        Eigen::Matrix<double, Eigen::Dynamic,Eigen::Dynamic> A;
+        A.setZero(N-1,N-1);
+
+        A(0,0) = 5;
+        A(0,1) = 1;
+        A(N-1,N-2) = 1;
+        A(N-1,N-1) = 5;
+        for(int i=1;i<N-2;i++){
+            A(i,i) = 6;
+            A(i,i-1) = 1;
+            A(i,i+1) = 1;
+        }
+        
+        Eigen::Matrix<double, Eigen::Dynamic,1> b;
+        b.resize(N-1,1);
+        for(int i=0;i<=N-2;i++){
+            b(i,0) = 8*input_condition.points[1][i];
+        }
+        b(0,0) -= 2*input_condition.f1;
+        b(N-2,0) -= 2*input_condition.fN;
+        Eigen::Matrix<double, Eigen::Dynamic,1> a;
+        a.resize(N-1,1);
+        a = A.colPivHouseholderQr().solve(b);
+        for(int i=0;i<N-1;i++){
+            coefficients[i+1] = a(i,0);
+        }
+        coefficients[0] = 2*input_condition.f1-coefficients[1];
+        coefficients[N] = 2*input_condition.fN-coefficients[N-1];
+        // cout << "A:" << endl;
+        // cout << A << endl;
+        // cout << "b:" << endl;
+        // cout << b << endl;
+        // cout << "a:" << endl;
+        // cout << a << endl;
+    }
+
+    //support interval is [i-1,i+2]
+    double Bi2(int i,double x) const{
+        double result = 0;
+        for(int k=-1;k<=2;k++){
+            result += pow(-1,2-k)*C(3,k+1)*pow(RELU(k+i-x),2);
+        }
+        result/=2;
+        return result;
+    }
+
+    /**debug
+     * 
+     */
+    void check_correctness(){
+        int N = input_condition.N;
+        double x = 1;
+        double y = input_condition.f1;
+        double result = (*this)(x);
+        cout << "x: " << x << " y: " << y << " result: " << result << endl;
+        for(int i=0;i<N-1;i++){
+            x = input_condition.points[0][i];
+            y = input_condition.points[1][i];
+            result = (*this)(x);
+            cout << "x: " << x << " y: " << y << " result: " << result << endl;
+        }
+        x = N;
+        y = input_condition.fN;
+        result = (*this)(x);
+        cout << "x: " << x << " y: " << y << " result: " << result << endl;
+    }
+
+/**useful functions
+ * 
+ */
+    //x \in [interval,interval+1]
+    int judge_interval(double x) const{
+        int N = input_condition.N;
+        for(int i=1;i<=N-1;i++){
+            if(x>=i&&x<=i+1)
+                return i;
+        }
+        cout << "x is not in the interval" << endl;
+        return -1;
+    }
+
+
+    B21Input_Condition input_condition;
+    vector<double> coefficients;
 };
