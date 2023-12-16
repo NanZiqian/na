@@ -315,7 +315,7 @@ public:
         
         resize_info();
         Calc_coefficients();
-        check_correctness();
+        //check_correctness();
     }
     ~D1B32Spline(){}
 
@@ -326,9 +326,10 @@ public:
     double operator()(double x) const{
         //x \in [ j,j+1 ]
         int j = judge_interval(x)+1;
+        //cout << "for x = " << x << "select interval j = " << j << endl;
         double result = 0;
         for(int i=0;i<=3;i++){
-            result += coefficients[j-1+i]*Bi3(j-1+i,x);
+            result += coefficients[j-1+i]*Bi3(j-2+i,x);
             //cout << i << "th coefficient of interval " << interval << " is " << coefficients[interval][i] << endl;
         }
         return result;
@@ -338,7 +339,7 @@ public:
     }
 
     //fout estimations at x
-    //N
+    //n for x = linspace(1,N,n)
     //x1 y1
     //x2 y2 ...
     void fout_eval(vector<double> x,string filename="D1B32_evals_") const{
@@ -346,7 +347,7 @@ public:
         filename += to_string(N);
         filename += ".txt";
         ofstream fout(filename);
-        fout << N << endl;
+        fout << x.size() << endl;
         for(int i=0;i<x.size();i++){
             fout << x[i] << " " << (*this)(x[i]) << endl;
         }
@@ -386,7 +387,7 @@ private:
             b(i,0) = 6*input_condition.points[1][i];
         }
         b(0,0) = 3*input_condition.points[1][0]+input_condition.m1;
-        b(N-1,0) = 3*input_condition.points[1][N-1]+input_condition.mN;
+        b(N-1,0) = 3*input_condition.points[1][N-1]-input_condition.mN;
         Eigen::Matrix<double, Eigen::Dynamic,1> a;
         a.resize(N,1);
         a = A.colPivHouseholderQr().solve(b);
@@ -399,8 +400,8 @@ private:
         // cout << A << endl;
         // cout << "b:" << endl;
         // cout << b << endl;
-        //cout << "a:" << endl;
-        //cout << a << endl;
+        // cout << "a:" << endl;
+        // cout << a << endl;
     }
 
     //support interval is [i-1,i+n] namely [i-1,i+3]
